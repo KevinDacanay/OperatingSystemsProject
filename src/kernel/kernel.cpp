@@ -2,6 +2,7 @@
 #include "drivers/keyboard.h"
 #include "drivers/string.h"
 #include "drivers/ports.h"
+#include "drivers/interrupts.h"
 
 // extern "C": tells the compiler to use C linkage for the function
 extern "C" void kernel_main() {
@@ -12,36 +13,46 @@ extern "C" void kernel_main() {
     const char* message = "Hello World! This is my OS!";    // A constant char pointer that points to the string "Hello World! ..."
     print(message);
 
+    // ---------------- VVV For interrupt VVV ---------------- 
+    init_idt();             // Initialize the IDT
+    enable_interrupts();    // Enable CPU interrupts (std instructions)
+    // -------------------------------------------------------
+
     // char* video_memory = (char*)0xB8000;                    // A char pointer that points to the starting address of the text mode video memory
     // (0xB8000): starting address for text mode video memory (this is where the kernel will write characters to be displayed)
     
     // Command Line:
     const char* prompt = "os-shell$";
-
     char command[256];
+
     //-------------------------------------------------------------------
 
     // Keep the CPU running indefinitely:
     while (true) {              // Necessary since the kernel is responsible for managing the CPU and keeping it busy.
-        read_input(command);    // Function to read user input
         print(prompt);          // print the shell prompt
+        read_input(command);    // Function to read user input
 
+        print("\nYou typed: ");
+        print(command);
+        print("\n");
+        
         if (strcmp(command, "exit") == 0) {
             break;              // Exit the shell loop (stopping the kernel)
         }
         else if (strcmp(command, "clear") == 0) {
             clear_screen();     // Clear the screen
         }
-        
-        // FIX THISSSvvvvvvvvvvvvvvvvvvvvvvvvvv
-        else if (strcmp(command, "echo") == 0) {
-            print(command + 5);  // Print the command after "echo "
+        else if (strncmp(command, "echo ", 5) == 0) {  
+            if (command[5] == '\0') {
+                print("Error: No text provided for echo command.");
+            } else {
+                print(command + 5);
+            }
         }
-        // FIX THISSS^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 
         else {
-            print("Unknown command: ");  // Print an error message if the command is unknown
+            print("Unknown command: ");     // Print an error message if the command is unknown
+            print(command);                 // Print the command that was entered
         }
     }
 }
