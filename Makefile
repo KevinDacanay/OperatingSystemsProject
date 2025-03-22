@@ -1,68 +1,83 @@
-# Makefile: a plain text file that contains instructions for a 
-# build system, typically used to automate the compilation process
-# of software projects, specifying which files need to be recompiled 
-# based on their dependencies and providing the commands to do so
+.PHONY: all clean run debug
 
-# Define compiler and assembler
-CC = i686-elf-gcc
-AS = i686-elf-as
-LD = i686-elf-ld
-NASM = nasm
-GDB = i686-elf-gdb
+# Define compiler, assembler, and linker
+CC = i686-linux-gnu-g++
+CXX = i686-linux-gnu-g++
+AS = nasm
+LD = i686-linux-gnu-ld
 
-# Set up directories
+# Compiler and linker flags
+CFLAGS = -ffreestanding -O2 -Wall -Wextra -g -Isrc -Isrc/kernel
+CXXFLAGS = -ffreestanding -O2 -Wall -Wextra -g -fno-pic -fno-exceptions -fno-rtti -Isrc/kernel -Isrc/kernel/drivers
+LDFLAGS = -nostdlib -T src/linker.ld
+
+# Directories
 SRC_DIR = src
 BUILD_DIR = build
 BIN_DIR = bin
-KERNEL_SRC = $(SRC_DIR)/kernel/kernel.cpp
-BOOTLOADER_SRC = $(SRC_DIR)/bootloader/boot.asm
 
-# Define output file names
+# Output files
 KERNEL_BIN = $(BIN_DIR)/kernel.bin
 BOOTLOADER_BIN = $(BIN_DIR)/bootloader.bin
 OS_IMG = $(BIN_DIR)/os.img
 
-# Set up compiler flags
-CFLAGS = -ffreestanding -O2 -Wall -Wextra -g
-ASFLAGS = -f elf
+# Source files
+KERNEL_SRC = $(wildcard $(SRC_DIR)/kernel/*.cpp)
+DRIVER_SRC = $(wildcard $(SRC_DIR)/kernel/drivers/*.cpp)
+KERNEL_ASM_SRC = $(SRC_DIR)/kernel/boot.s  # Add boot.s file
+OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(KERNEL_SRC) $(DRIVER_SRC))
+KERNEL_ASM_OBJ = $(BUILD_DIR)/kernel/boot.o  # Object file for boot.s
 
-# Object files
-OBJS = $(BUILD_DIR)/kernel.o $(BUILD_DIR)/keyboard.o $(BUILD_DIR)/ports.o $(BUILD_DIR)/video.o 
-
-# Output kernel
+# Default target: build OS image
 all: $(OS_IMG)
 
-# Create the OS image
-$(OS_IMG): $(KERNEL_BIN) $(BOOTLOADER_BIN)
-    @echo "Creating OS image..."
-# place the bootloader and kernel at specific addresses in the os.img
-# seek=4 places the bootloader at the 4th sector (address 0x7C00).
-	dd if=$(BOOTLOADER_BIN) of=$(OS_IMG) bs=512 seek=4 
-# seek=200 places the kernel at 0x1000.
-    dd if=$(KERNEL_BIN) of=$(OS_IMG) bs=512 seek=200
+# Build OS image
+$(OS_IMG): $(BOOTLOADER_BIN) $(KERNEL_BIN)
+	@echo "Creating OS image..."
+	dd if=/dev/zero of=$(OS_IMG) bs=512 count=100   # Create a blank 100-sector image
+	dd if=$(BOOTLOADER_BIN) of=$(OS_IMG) bs=512 seek=0 conv=notrunc
+	dd if=$(KERNEL_BIN) of=$(OS_IMG) bs=512 seek=1 conv=notrunc
 
 # Compile bootloader
-$(BOOTLOADER_BIN): $(BOOTLOADER_SRC)
-    @echo "Compiling bootloader..."
-    $(AS) $(BOOTLOADER_SRC) -o $(BOOTLOADER_BIN)
+$(BOOTLOADER_BIN): $(SRC_DIR)/bootloader/boot.asm | $(BIN_DIR)
+	@echo "Compiling bootloader..."
+	$(AS) -fbin $< -o $@
 
-# Compile kernel
-$(KERNEL_BIN): $(KERNEL_SRC)
-    @echo "Compiling kernel..."
-    $(CC) $(CFLAGS) -c $(KERNEL_SRC) -o $(BUILD_DIR)/kernel.o
-    $(LD) -o $(KERNEL_BIN) $(BUILD_DIR)/kernel.o -Ttext 0x1000
+# Compile boot.s (Kernel entry point)
+$(KERNEL_ASM_OBJ): $(KERNEL_ASM_SRC) | $(BUILD_DIR)
+	@echo "Compiling kernel boot.s..."
+	mkdir -p $(dir $@)
+	i686-linux-gnu-gcc -c $< -o $@  # Use GCC to compile the assembly file
 
-# Clean build files
+# Compile kernel and drivers
+$(KERNEL_BIN): $(KERNEL_ASM_OBJ) $(OBJS) | $(BIN_DIR)
+	@echo "Linking kernel..."
+	$(LD) $(LDFLAGS) -o $@ $(KERNEL_ASM_OBJ) $(OBJS)
+
+# Compile C++ source files
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	@echo "Compiling $<..."
+	mkdir -p $(dir $@)  # Ensure subdirectories exist
+	$(CC) $(CXXFLAGS) -c $< -o $@
+
+# Ensure required directories exist
+$(BUILD_DIR) $(BIN_DIR):
+	mkdir -p $@
+
+# Clean build artifacts
 clean:
-    rm -rf $(BUILD_DIR)/* $(BIN_DIR)/*
+	@echo "Cleaning build files..."
+	rm -rf $(BUILD_DIR) $(BIN_DIR)
 
-# Run QEMU with the OS image
+# Run QEMU
 run: $(OS_IMG)
-    qemu-system-x86_64 -drive format=raw,file=$(OS_IMG)
+	@echo "Running in QEMU..."
+	qemu-system-i386 -drive format=raw,file=$(OS_IMG)
 
 # Debug with GDB
 debug: $(KERNEL_BIN)
-    $(GDB) $(KERNEL_BIN)
+	gdb $(KERNEL_BIN)
+
 
 # Do I run the Makefile or just write it?
 # You will run the Makefile using the make command. Here's how:
