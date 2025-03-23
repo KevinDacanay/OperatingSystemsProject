@@ -9,30 +9,35 @@
 start:
     cli               ; Disable interrupts during setup
 
-    ; Print 'Hi' to the screen
-    mov ah, 0x0E      ; Teletype output function
-    mov al, 'H'       ; Print 'H'
+    ; Print 'H' and 'i' using BIOS interrupt (real mode)
+    mov ah, 0x0E
+    mov al, 'H'
     int 0x10
 
-    mov al, 'i'       ; Print 'i'
+    mov al, 'i'
     int 0x10
 
     ; Load the kernel from disk (sector 2) into memory at 0x1000
-    mov bx, 0x1000    ; Destination address (where kernel loads)
+    mov bx, 0x1000    ; Destination address
     mov dh, 1         ; Read 1 sector
     call disk_load
 
-    ; Now switch to protected mode
+    ; Switch to protected mode
     cli               ; Disable interrupts
-    lgdt [gdt_descriptor] ; Load Global Descriptor Table
+    lgdt [gdt_descriptor]  ; Load Global Descriptor Table
+
+    ; Print 'G' to indicate GDT was loaded (real mode)
+    mov ah, 0x0E
+    mov al, 'G'
+    int 0x10
 
     mov eax, cr0
     or eax, 1         ; Set protected mode bit
     mov cr0, eax
 
-    jmp CODE_SEG:init_protected_mode  ; Far jump to update CS
+    ; Use far jump to flush pipeline and enter protected mode
+    jmp CODE_SEG:init_protected_mode  
 
-; Disk Load function:
 disk_load:
     pusha             
     mov ah, 0x02      ; BIOS read sector function
@@ -47,9 +52,11 @@ disk_load:
     cmp ah, 0         ; Check if read was successful
     jne disk_error    ; If not, jump to error handler
 
-    ; Print success indicator
+    ; Print debug letters after successful load
     mov ah, 0x0E
-    mov al, 'S'       ; Print 'S' for success
+    mov al, 'L'       ; Print 'L' (Loaded)
+    int 0x10
+    mov al, 'D'       ; Print 'D' (Done)
     int 0x10
 
     popa 
@@ -61,32 +68,20 @@ disk_error:
     int 0x10
     hlt
 
-
 ; Global Descriptor Table
 gdt:
     dq 0x0000000000000000   ; Null descriptor
 
 code_segment:
-    dw 0xFFFF       ; Limit (4GB)
-    dw 0x0000       ; Base address (low)
-    db 0x00         ; Base address (middle)
-    db 0x9A         ; Code segment: Execute, Read, Present
-    db 0xCF         ; Granularity, 32-bit
-    db 0x00         ; Base address (high)
-
+    dq 0x00209A0000000000   ; 64-bit code segment
 data_segment:
-    dw 0xFFFF       ; Limit (4GB)
-    dw 0x0000       ; Base address (low)
-    db 0x00         ; Base address (middle)
-    db 0x92         ; Data segment: Read/Write, Present
-    db 0xCF         ; Granularity, 32-bit
-    db 0x00         ; Base address (high)
+    dq 0x0000920000000000   ; 64-bit data segment
 
 gdt_end:
 
 gdt_descriptor:
     dw gdt_end - gdt - 1
-    dd gdt          ; Address of GDT
+    dd gdt
 
 CODE_SEG equ code_segment - gdt
 DATA_SEG equ data_segment - gdt
@@ -99,12 +94,54 @@ init_protected_mode:
     mov gs, ax
     mov ss, ax
 
-    ; Jump to the kernel in protected mode
-    jmp CODE_SEG:0x1000  
+    ; Debugging print in protected mode (write 'P' to video memory)
+    mov dword [0xB8000], 0x2F50  ; 'P' in green on black
 
-; Correct Padding to ensure bootloader is **EXACTLY** 512 bytes
-times 510 - ($ - $$) db 0  ; Fill with zeros
-dw 0xAA55                  ; Boot signature
+    ; Enable PAE for 64-bit mode
+    mov eax, cr4
+    or eax, 1 << 5     ; Set PAE (Physical Address Extension)
+    mov cr4, eax
+
+    ; Enable long mode
+    mov ecx, 0xC0000080  ; Read EFER MSR
+    rdmsr
+    or eax, 1 << 8      ; Set LME (Long Mode Enable)
+    wrmsr
+
+    ; Set up page tables (1:1 mapping for now)
+    mov eax, 0x2000    ; Page directory address
+    mov cr3, eax
+
+    ; Enable paging
+    mov eax, cr0
+    or eax, 1 << 31    ; Enable paging
+    mov cr0, eax
+
+    ; Far jump to long mode
+    jmp CODE_SEG:init_long_mode  
+
+[bits 64]  ; 64-bit mode starts here
+init_long_mode:
+    mov ax, DATA_SEG
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    ; Debugging print in 64-bit mode (write 'L' to video memory)
+    mov qword [0xB8000], 0x2F4C  ; 'L' in green on black
+
+    ; Jump to the 64-bit kernel entry
+    mov rdi, 0   ; Kernel entry argument (if needed)
+    call 0x1000  ; Jump to the kernel (64-bit)
+
+    hlt
+
+; Correct Padding (Bootloader MUST be exactly 512 bytes)
+times 510 - ($ - $$) db 0  
+dw 0xAA55  ; Boot signature
+
 
 ; How do we load the kernel into memory at 0x1000?
 ; When building the OS image (os.img):
