@@ -4,25 +4,27 @@
 #include "drivers/ports.h"
 #include "drivers/interrupts.h"
 
+#include <stdint.h>  // Use correct fixed-width integer types
+
 // extern "C": tells the compiler to use C linkage for the function
 extern "C" void kernel_main() {
     // kernel_main is the entry point of the kernel, it's called by the bootloader
     // This is where the kernel starts executing
     // We'll use this function to initialize the kernel and start the scheduler
- 
-    const char* message = "Hello World! This is my OS!";    // A constant char pointer that points to the string "Hello World! ..."
+
+    const char* message = "Hello World! This is my 64-bit OS!";  // Updated message for 64-bit verification
     print(message);
 
     // ---------------- VVV For interrupt VVV ---------------- 
-    init_idt();             // Initialize the IDT
+    init_idt();             // Initialize the 64-bit IDT
     enable_interrupts();    // Enable CPU interrupts (std instructions)
     // -------------------------------------------------------
 
-    // char* video_memory = (char*)0xB8000;                    // A char pointer that points to the starting address of the text mode video memory
+    // char* video_memory = (char*)0xB8000;                    
     // (0xB8000): starting address for text mode video memory (this is where the kernel will write characters to be displayed)
     
     // Command Line:
-    const char* prompt = "os-shell$";
+    const char* prompt = "os-shell$ ";
     char command[256];
 
     //-------------------------------------------------------------------
@@ -35,7 +37,7 @@ extern "C" void kernel_main() {
         print("\nYou typed: ");
         print(command);
         print("\n");
-        
+
         if (strcmp(command, "exit") == 0) {
             break;              // Exit the shell loop (stopping the kernel)
         }
@@ -54,5 +56,10 @@ extern "C" void kernel_main() {
             print("Unknown command: ");     // Print an error message if the command is unknown
             print(command);                 // Print the command that was entered
         }
+    }
+
+    // After exiting shell loop, prevent execution of unintended memory
+    while (true) { 
+        __asm__("hlt");  // Halt the CPU to prevent crashes when kernel exits
     }
 }
