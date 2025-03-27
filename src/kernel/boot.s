@@ -1,25 +1,46 @@
-.global _start  
-.extern kernel_main
+; Global label for the entry point of the program
+global _start
 
-.section .text
+; Declare an external function 'kernel_main' that will be linked later
+extern kernel_main
+
+; Define the .text section, which contains the program's code
+section .text
+
+; Entry point of the program
 _start:
-    cli
-    mov $0x10, %ax      
-    mov %ax, %ds
-    mov %ax, %es
-    mov %ax, %fs
-    mov %ax, %gs
-    mov %ax, %ss
+    ; Disable interrupts to prevent the CPU from handling external events
+    cli                 ; Disable interrupts
 
-    /* Print 'K' to video memory */
-    mov $0xB8000, %rbx
-    movw $0x2F4B, (%rbx)  
+    ; Set up the segment registers to point to the data segment
+    ; The value 0x10 is the index of the data segment in the Global Descriptor Table (GDT)
+    mov ax, 0x10       
+    mov ds, ax         ; Data Segment (DS) register
+    mov es, ax         ; Extra Segment (ES) register
+    mov fs, ax         ; File System Segment (FS) register
+    mov gs, ax         ; General Segment (GS) register
+    mov ss, ax         ; Stack Segment (SS) register
 
-    mov $0x90000, %rsp  # Set up 64-bit stack
+    ; Print 'K' to video memory
+    ; The address 0xB8000 is the base address of the video memory
+    mov rbx, 0xB8000
+    ; The value 0x2F4B represents the ASCII character 'K' in the VGA text mode
+    ; The 'word' keyword specifies that we're writing a 16-bit value
+    mov word [rbx], 0x2F4B  
 
-    sti
+    ; Set up the 64-bit stack
+    ; The address 0x90000 is the base address of the stack
+    mov rsp, 0x90000    ; Stack Pointer (RSP) register
+
+    ; Enable interrupts to allow the CPU to handle external events
+    sti                 ; Enable interrupts
+
+    ; Call the 'kernel_main' function to start the kernel
     call kernel_main
 
+    ; Halt the CPU to prevent it from executing further instructions
     hlt  
+
+; Infinite loop to prevent the CPU from executing further instructions
 .loop:
     jmp .loop
