@@ -18,7 +18,7 @@ start:
     int 0x10
 
     ; Load the kernel from disk (sector 2) into memory at 0x1000
-    mov bx, 0x1000    ; Destination address
+    mov bx, 0x100000    ; Destination address
     mov dh, 1         ; Read 1 sector
     call disk_load
 
@@ -108,6 +108,7 @@ init_protected_mode:
     or eax, 1 << 8      ; Set LME (Long Mode Enable)
     wrmsr
 
+    ; NEED TO SET UP PAGE TABLES!!!
     ; Set up page tables (1:1 mapping for now)
     mov eax, 0x2000    ; Page directory address
     mov cr3, eax
@@ -134,7 +135,7 @@ init_long_mode:
 
     ; Jump to the 64-bit kernel entry
     mov rdi, 0   ; Kernel entry argument (if needed)
-    call 0x1000  ; Jump to the kernel (64-bit)
+    call 0x100000  ; Jump to the kernel (64-bit)
 
     hlt
 
