@@ -1,8 +1,14 @@
-OUTPUT_FORMAT(elf64-x86-64)
 ENTRY(kernel_main)
+
 SECTIONS {
-    . = 0x100000;
-    .text : { *(.text) }
-    .data : { *(.data) }
-    .bss  : { *(.bss) }
+    . = 0x10000;  /* Kernel starts at this address */
+    .text : {
+        *(.text)   /* Include all .text sections here */
+    }
+    .data : {
+        *(.data)
+    }
+    .bss : {
+        *(.bss)
+    }
 }
