@@ -7,7 +7,7 @@ LD = ld
 
 CFLAGS = -ffreestanding -O2 -Wall -Wextra -g -Isrc -Isrc/kernel
 CXXFLAGS = -ffreestanding -O2 -Wall -Wextra -g -fno-pic -fno-exceptions -fno-rtti -Isrc/kernel -Isrc/kernel/drivers
-LDFLAGS = -T src/linker.ld -nostdlib -z max-page-size=0x1000
+LDFLAGS = -T src/kernel/linker.ld -nostdlib -z max-page-size=0x1000
 
 SRC_DIR = src
 BUILD_DIR = build
@@ -19,9 +19,9 @@ OS_IMG = $(BIN_DIR)/os.img
 
 KERNEL_SRC = $(wildcard $(SRC_DIR)/kernel/*.cpp)
 DRIVER_SRC = $(wildcard $(SRC_DIR)/kernel/drivers/*.cpp)
-KERNEL_ASM_SRC = $(SRC_DIR)/kernel/boot.s
+KERNEL_ASM_SRC = $(SRC_DIR)/bootloader/boot2.asm  # Change this to boot2.asm
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(KERNEL_SRC) $(DRIVER_SRC))
-KERNEL_ASM_OBJ = $(BUILD_DIR)/kernel/boot.o
+KERNEL_ASM_OBJ = $(BUILD_DIR)/bootloader/boot2.o  # Correct object path
 
 all: $(OS_IMG)
 
@@ -36,7 +36,7 @@ $(BOOTLOADER_BIN): $(SRC_DIR)/bootloader/boot.asm | $(BIN_DIR)
 	$(AS) -fbin $< -o $@
 
 $(KERNEL_ASM_OBJ): $(KERNEL_ASM_SRC) | $(BUILD_DIR)
-	@echo "Compiling kernel boot.s..."
+	@echo "Compiling kernel boot2.asm..."
 	mkdir -p $(dir $@)
 	$(AS) -f elf64 $< -o $@  # Correct NASM syntax
 
@@ -62,6 +62,7 @@ run: $(OS_IMG)
 
 debug: $(KERNEL_ELF)
 	gdb $(KERNEL_ELF)
+
 
 
 # Do I run the Makefile or just write it?
