@@ -31,11 +31,27 @@ _start:
     call setup_paging
 
     ; Jump to kernel entry point in 64-bit mode
-    jmp 0x08:kernel_main   ; Correct jump to kernel_main in 64-bit mode
+    jmp 0x10000   ; Correct jump to kernel_main in 64-bit mode
 
 ; Disk loading routine: Read sectors from disk to memory
 disk_load:
-    pusha                   ; Save all registers
+    ; pusha                   ; Save all registers
+        ; Replace `pusha` with saving the necessary registers manually
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+    push rbp
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+
     mov ah, 0x02            ; BIOS read sector function
     mov al, dh              ; Number of sectors to read
     mov ch, 0               ; Cylinder
@@ -45,7 +61,23 @@ disk_load:
     int 0x13                ; BIOS disk interrupt
     jc disk_error           ; Jump to error if there's a failure
 
-    popa                    ; Restore registers
+    ; popa                    ; Restore registers
+        ; Replace `popa` with restoring the registers manually
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rbp
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+
     ret
 
 ; Error handler for disk load
@@ -88,7 +120,7 @@ pt_loop:
 
     ; Enable Paging (set PG bit in CR0)
     mov rax, cr0
-    or rax, 0x80000000        ; Set PG (paging) bit in CR0
+    or rax, 0x8000000000000000   ; Set the PG (paging) bit (64-bit value)
     mov cr0, rax
 
     ; Enable 64-bit Long Mode (LME in MSR 0xC0000080)
@@ -119,3 +151,112 @@ section .data
 ; Correct padding to 512 bytes
 times 510 db 0     ; Pad to ensure the bootloader is 512 bytes
 dw 0xAA55          ; Boot signature
+
+; [ORG 0x10000]
+; BITS 16
+
+; start:
+;     cli                     ; Disable interrupts
+;     xor ax, ax
+;     mov ds, ax
+;     mov es, ax
+;     mov ss, ax
+;     mov sp, 0x9000
+
+;     ; Enable A20 line (real mode)
+;     in al, 0x92
+;     or al, 0x02
+;     out 0x92, al
+
+;     ; Load GDT
+;     lgdt [gdt_descriptor]
+
+;     ; Enter protected mode
+;     mov eax, cr0
+;     or eax, 1
+;     mov cr0, eax
+
+;     jmp CODE_SEG:init_pm    ; Far jump to flush pipeline
+
+; [BITS 32]
+; init_pm:
+;     ; Set up segment registers
+;     mov ax, DATA_SEG
+;     mov ds, ax
+;     mov es, ax
+;     mov fs, ax
+;     mov gs, ax
+;     mov ss, ax
+
+;     ; Enable PAE
+;     mov eax, cr4
+;     or eax, 1 << 5
+;     mov cr4, eax
+
+;     ; Load PML4 address into CR3
+;     mov eax, pml4_table
+;     mov cr3, eax
+
+;     ; Enable long mode via EFER MSR
+;     mov ecx, 0xC0000080     ; IA32_EFER MSR
+;     rdmsr
+;     or eax, 1 << 8          ; Set LME (Long Mode Enable)
+;     wrmsr
+
+;     ; Enable paging
+;     mov eax, cr0
+;     or eax, 0x80000000      ; Set PG (Paging) bit
+;     mov cr0, eax
+
+;     ; Far jump to 64-bit code
+;     jmp 0x08:long_mode_entry
+
+; [BITS 64]
+; long_mode_entry:
+;     ; Now in long mode!
+;     mov ax, 0x10
+;     mov ds, ax
+;     mov ss, ax
+
+;     ; Now you can call your C++ kernel at a higher half address if mapped
+;     hlt
+
+; ; ----------------------------
+; ; GDT Setup (for protected/long mode)
+; gdt_start:
+; gdt_null:
+;     dq 0x0000000000000000
+
+; gdt_code:
+;     dq 0x00AF9A000000FFFF   ; Code segment
+
+; gdt_data:
+;     dq 0x00AF92000000FFFF   ; Data segment
+
+; gdt_end:
+
+; gdt_descriptor:
+;     dw gdt_end - gdt_start - 1
+;     dd gdt_start
+
+; CODE_SEG equ gdt_code - gdt_start
+; DATA_SEG equ gdt_data - gdt_start
+
+; ; ----------------------------
+; ; Paging Setup (Identity-mapped, simple 2M paging)
+
+; PML4_ENTRY equ pdpt_table + 0x03
+; PDPT_ENTRY equ pd_table + 0x03
+
+; align 4096
+; pml4_table:
+;     dq PML4_ENTRY
+
+; align 4096
+; pdpt_table:
+;     dq PDPT_ENTRY
+
+; align 4096
+; pd_table:
+;     ; One 2MB identity-mapped page
+;     dq 0x0000000000000083    ; Present, Read/Write, 2MB Page
