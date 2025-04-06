@@ -7,7 +7,7 @@ LD = ld
 
 CFLAGS = -ffreestanding -O2 -Wall -Wextra -g -Isrc -Isrc/kernel
 CXXFLAGS = -ffreestanding -O2 -Wall -Wextra -g -fno-pic -fno-exceptions -fno-rtti -Isrc/kernel -Isrc/kernel/drivers
-LDFLAGS = -T src/kernel/linker.ld -nostdlib -z max-page-size=0x1000
+LDFLAGS = -T src/linker.ld -nostdlib -z max-page-size=0x1000
 
 SRC_DIR = src
 BUILD_DIR = build
@@ -33,12 +33,12 @@ $(OS_IMG): $(BOOTLOADER_BIN) $(KERNEL_ELF)
 
 $(BOOTLOADER_BIN): $(SRC_DIR)/bootloader/boot.asm | $(BIN_DIR)
 	@echo "Compiling bootloader..."
-	$(AS) -fbin $< -o $@
+	$(AS) -fbin $< -o $@  # This outputs a binary bootloader for the boot sector
 
 $(KERNEL_ASM_OBJ): $(KERNEL_ASM_SRC) | $(BUILD_DIR)
 	@echo "Compiling kernel boot2.asm..."
 	mkdir -p $(dir $@)
-	$(AS) -f elf64 $< -o $@  # Correct NASM syntax
+	$(AS) -f elf64 $< -o $@  # Correct NASM syntax for 64-bit object file
 
 $(KERNEL_ELF): $(KERNEL_ASM_OBJ) $(OBJS) | $(BIN_DIR)
 	@echo "Linking kernel ELF..."
@@ -58,11 +58,10 @@ clean:
 
 run: $(OS_IMG)
 	@echo "Running in QEMU..."
-	qemu-system-x86_64 -drive format=raw,file=$(OS_IMG) 
+	qemu-system-x86_64 -drive format=raw,file=$(OS_IMG)
 
 debug: $(KERNEL_ELF)
 	gdb $(KERNEL_ELF)
-
 
 
 # Do I run the Makefile or just write it?
