@@ -1,14 +1,21 @@
-ENTRY(kernel_main)
+ENTRY(start_stage2)
 
 SECTIONS {
-    . = 0x10000;  /* Kernel starts at this address */
+    . = 0x10000;  /* Load address of stage 2 */
+
     .text : {
-        *(.text)   /* Include all .text sections here */
+        *(.text)
     }
+
+    .rodata : {
+        *(.rodata)
+    }
+
     .data : {
         *(.data)
     }
+
     .bss : {
-        *(.bss)
+        *(.bss COMMON)
     }
 }
