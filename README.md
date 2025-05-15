@@ -42,13 +42,6 @@ Minimalist approach, keeping only essential services in kernel space.
 ## 5. System Calls
 System calls allow user programs to request services from the kernel.
 
-### Example system calls:
-- `sys_write()` → Output to screen.
-- `sys_read()` → Read from keyboard.
-- `sys_fork()` → Create a new process.
-- `sys_exec()` → Run a program.
-- `sys_exit()` → Terminate a process.
-
 ## 6. Process Scheduling (Preemptive SJF)
 ### Preemptive Shortest Job First (SJF) Scheduler
 - Picks the shortest job next (minimizing average wait time).
