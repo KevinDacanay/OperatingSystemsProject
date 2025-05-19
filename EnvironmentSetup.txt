@@ -1,4 +1,4 @@
-Preparing for the build
+Preparing for the build:
 The GNU Compiler Collection is an advanced piece of software with dependencies. You need the following in order to build GCC:
 
 A Unix-like environment (Windows users can use the Windows Subsystem for Linux or Cygwin)
