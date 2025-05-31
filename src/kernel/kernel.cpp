@@ -9,7 +9,9 @@ remembers the location of the next character in this buffer and provides a primi
 adding a new character. 
 ... there is no support for line breaks ('\n) and writing the character will show some VGA-
     specific character instead. 
-... there is no support for scrolling when the screen is filled up. 
+    !!! IMPLEMENT THIS
+... there is no support for scrolling when the screen is filled up.   
+    !!! IMPLEMENT THIS
 (NOTE: VGA text mode is deprecated on newer machines and UEFI only supports pixel buffer)
 */
 
