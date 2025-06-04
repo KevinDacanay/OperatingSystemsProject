@@ -27,7 +27,7 @@ terminal_putchar, and you'll need a font (bitmap images for each character).
 #include <stdint.h>
 
 // Check if the compiler thinks we're targeting the wrong OS
-#if defined(__linuux__)
+#if defined(__linux__)
 #error "You are not using a cross-compiler, error ahead."
 #endif
 
