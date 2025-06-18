@@ -103,7 +103,7 @@ System calls allow user programs to request services from the kernel.
 - Implement basic GUI (later stage).
 - Transition from printf debugging to GDB for deeper debugging.
 
-## Source Code Layout
+## Source Code Layout (in progress)
 ```
 /os_project
 │-- bootloader/       # Bootloader source code
