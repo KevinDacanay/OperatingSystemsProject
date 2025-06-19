@@ -22,9 +22,6 @@ has pixels, so you have to draw each glyph yourself. This means you'll need a di
 terminal_putchar, and you'll need a font (bitmap images for each character).
 */
 
-/*
-This is for a Bare Bones Operating System which is very simple...
-*/
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
