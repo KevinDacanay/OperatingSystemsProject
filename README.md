@@ -5,7 +5,7 @@ We are building a simple operating system from scratch using assembly and C++, w
 
 ## 2. Key Functionalities
 The OS will include:
-- Custom Bootloader (loads the kernel)
+- Custom Bootloader (loads the kernel) / GRUB
 - Microkernel (handles core operations)
 - System Calls (interface for user programs)
 - Preemptive SJF Scheduling (efficient CPU scheduling)
