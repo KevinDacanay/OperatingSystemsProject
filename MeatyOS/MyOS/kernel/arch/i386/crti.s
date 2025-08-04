@@ -1,3 +1,11 @@
+/*
+	crti.s – C Runtime Initialization
+	- Contains the prologue (start) of constructor sections.
+	- Used to mark the beginning of init sections such as:
+		.init: Initialization code section
+		.fini: Finalization code section
+ */
+
 .section .init
 .global _init
 .type _init, @function
