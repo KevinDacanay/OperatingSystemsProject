@@ -1,9 +1,12 @@
+// --- printf.cpp ---
 #include <stdio.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdarg.h>
 #include <string.h>
+#include <errno.h>  // for setting errno on error
 
+// Helper function to print a string of given length using putchar()
 static bool print(const char* data, size_t length) {
     const unsigned char* bytes = (const unsigned char*) data;
     for (size_t i = 0; i < length; i++) {
@@ -14,6 +17,7 @@ static bool print(const char* data, size_t length) {
     return true;
 }
 
+// printf: supports %s, %c, and %% format specifiers for now
 int printf(const char* restrict format, ...) {
     va_list parameters;
     va_start(parameters, format);
@@ -32,10 +36,11 @@ int printf(const char* restrict format, ...) {
                 amount++;
             }
             if (maxrem < amount) {
-                // TO-DO: set errno to EOVERFLOW
+                errno = EOVERFLOW; // set errno to indicate error
                 return -1;
             }
             if (!print(format, amount)) {
+                errno = EIO;
                 return -1;
             }
             format += amount;
@@ -47,12 +52,13 @@ int printf(const char* restrict format, ...) {
 
         if (*format == 'c') {
             format++;
-            char c = (char) va_arg(parameters, int /*char promotes to int*/);
+            char c = (char) va_arg(parameters, int);
             if (!maxrem) {
-                // TO-DO: set errno to EOVERFLOW
+                errno = EOVERFLOW;
                 return -1;
             }
             if (!print(&c, sizeof(c))) {
+                errno = EIO;
                 return -1;
             }
             written++;
@@ -61,21 +67,24 @@ int printf(const char* restrict format, ...) {
             const char* str = va_arg(parameters, const char*);
             size_t len = strlen(str);
             if (maxrem < len) {
-                // TO-DO: set errno to EOVERFLOW
+                errno = EOVERFLOW;
                 return -1;
             }
             if (!print(str, len)) {
+                errno = EIO;
                 return -1;
             }
             written += len;
         } else {
+            // Unknown format specifier, print as is
             format = format_begun_at;
             size_t len = strlen(format);
             if (maxrem < len) {
-                // TO-DO: set errno to EOVERFLOW
+                errno = EOVERFLOW;
                 return -1;
             }
-            if (!print(fomrat, len)) {
+            if (!print(format, len)) {
+                errno = EIO;
                 return -1;
             }
             written += len;
