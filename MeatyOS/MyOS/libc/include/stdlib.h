@@ -1,3 +1,4 @@
+// Declares utility functions 
 #ifndef _STDLIB_H
 #define _STDLIB_H 1
 
@@ -7,8 +8,9 @@
 extern "C" {
 #endif
 
-__attribute__((__noreturn__))
-void abort(void);
+// Causes abnormal program termination. Does not return. (kernel panic)
+__attribute__((__noreturn__))   
+void abort(void);   // fatal error handler
 
 #ifdef __cplusplus
 }
