@@ -1,130 +1,73 @@
-# Operating System Project Overview
+# Minimal 64-bit CLI-Based Operating System
 
-## 1. Project Goal
-We are building a simple operating system from scratch using assembly and C++, with inspiration from Linux systems. The OS will follow a microkernel architecture for better security, fault tolerance, and scalability. Our goal is to implement core OS functionalities, including process management, memory management, system calls, a file system, synchronization, multithreading, and a basic GUI in the future.
+## Overview
+This project is a minimal yet powerful **64-bit Command-Line Interface (CLI) Operating System** designed for educational and experimental purposes.  
+The OS supports **concurrency, multithreading, multiprocessing, memory management, paging**, and more — all built from scratch.
 
-## 2. Key Functionalities
-The OS will include:
-- Custom Bootloader (loads the kernel) / GRUB
-- Microkernel (handles core operations)
-- System Calls (interface for user programs)
-- Preemptive SJF Scheduling (efficient CPU scheduling)
-- Paging-Based Memory Management (simpler virtual memory)
-- FAT File System (with basic read/write support)
-- Shared Memory & Mutexes (for IPC & synchronization)
-- Multithreading Support (basic thread management)
-- I/O Handling (keyboard, screen, disk operations)
-- QEMU-Based Testing (emulation & debugging)
+## Core Functionalities
 
-## 3. System Initialization (Boot Process)
-### Bootloader (Stage 1)
-- Written in assembly.
-- Runs in real mode, loads the next stage.
+### 1. Boot & Initialization
+- **UEFI or BIOS Bootloader**: Loads the 64-bit kernel into memory.
+- **Long Mode Initialization**: Enters 64-bit mode, sets up GDT and IDT.
+- **Kernel Entry Point**: Starts kernel initialization and main loop.
 
-### Bootloader (Stage 2)
-- Switches CPU to protected mode (32-bit), then long mode (64-bit).
-- Loads the kernel into memory and passes control.
+### 2. Command-Line Interface (CLI)
+- **Terminal Driver**: Reads keyboard input and displays output.
+- **Shell**: Parses and executes built-in commands.
+- **Basic Commands**: `ls`, `cat`, `echo`, `clear`, `help`.
 
-### Kernel Initialization
-- Sets up interrupts, memory management, and device drivers.
-- Initializes scheduler, system calls, and process management.
+### 3. Memory Management
+- **Physical Memory Manager (PMM)**: Tracks and allocates physical memory.
+- **Virtual Memory Manager (VMM)**: Implements paging and address mapping.
+- **Heap Allocator**: Dynamic memory allocation for the kernel.
+- **Stack Management**: Handles process and thread stacks.
 
-## 4. Kernel
-### Microkernel Design
-Minimalist approach, keeping only essential services in kernel space.
+### 4. Process Management
+- **Process Control Block (PCB)**: Stores registers, memory maps, process state.
+- **Process Creation & Termination**: Spawn and clean up processes.
+- **Context Switching**: Save/restore CPU state between processes.
 
-### Components Include:
-- Process Scheduler (handles multitasking).
-- Memory Manager (paging system).
-- System Call Interface (allows user programs to interact with the OS).
-- IPC Mechanism (shared memory, message passing).
+### 5. Concurrency & Multithreading
+- **Thread Management**: Multiple threads per process.
+- **Preemptive Multitasking**: Timer-based scheduling.
+- **Synchronization**: Mutexes, semaphores, spinlocks.
 
-## 5. System Calls
-System calls allow user programs to request services from the kernel.
+### 6. Interrupt & Exception Handling
+- **IDT Setup**: Handles hardware interrupts and CPU exceptions.
+- **Interrupt Service Routines (ISRs)**: Respond to hardware signals.
+- **System Calls**: Safe kernel interaction for user programs.
 
-## 6. Process Scheduling (Preemptive SJF)
-### Preemptive Shortest Job First (SJF) Scheduler
-- Picks the shortest job next (minimizing average wait time).
-- Preemptive: Allows task switching if a shorter job arrives.
-- Implemented using a priority queue to keep track of processes.
+### 7. Filesystem Support
+- **Basic Filesystem** (e.g., FAT32 or custom): Read/write files.
+- **VFS Layer**: Filesystem abstraction for multiple types.
 
-## 7. Synchronization & Multithreading
-- **Shared Memory for IPC:** Processes will communicate via shared memory regions.
-- **Mutex Locks:** Used to prevent race conditions in critical sections.
-- **Threading:** Basic multithreading support will be included.
+### 8. Drivers
+- **Keyboard Driver**: Converts scancodes to characters.
+- **Screen/Terminal Driver**: Manages text output.
+- **Storage Driver**: Disk I/O (ATA, NVMe, etc.).
+- **Timer Driver**: Multitasking and timekeeping support.
 
-## 8. Memory Management (Paging System)
-### Paging (x86_64 Mode)
-- Translates virtual addresses to physical addresses.
-- Provides isolation between processes.
+---
 
-### Simple Page Table Implementation
-- Initially, a basic paging mechanism (without swapping).
+## Core Characteristics
+1. **64-bit Long Mode**: Modern CPU architecture support.
+2. **Multitasking**: Run multiple processes with CPU time-slicing.
+3. **Multiprocessing**: Use multiple CPU cores (SMP support).
+4. **Multithreading**: Threads share memory for efficient concurrency.
+5. **Preemptive Scheduling**: OS controls task switching.
+6. **Protected Mode & Ring Privileges**: Process isolation and stability.
+7. **Paging & Virtual Memory**: Per-process address space isolation.
+8. **Concurrency Control**: Mutexes, semaphores, spinlocks.
+9. **Modularity**: Separate kernel, drivers, and user programs.
+10. **Portability**: Hardware-independent code where possible.
 
-## 9. Disk & File System (FAT)
-- **Virtual Disk Image** (used for storage initially, real hardware later).
-- **FAT (File Allocation Table) system** with:
-  - Basic Read/Write Support
-  - Hierarchical File Structure
+---
 
-## 10. I/O Handling
-### Keyboard Input
-- Interrupt-driven input system.
+## Summary
+This OS boots into **64-bit mode**, manages **processes and threads** across multiple CPU cores, implements **memory paging**, and exposes a **CLI shell** for direct user interaction.  
+It is modular, supports **preemptive multitasking**, and ensures **process isolation** with virtual memory.
 
-### Screen Output
-- VGA text mode for early display, later graphical support.
+---
 
-### Disk Access
-- Basic ATA disk driver for reading/writing.
-
-## 11. Debugging & Testing
-- **QEMU:** Used for testing & debugging.
-- **Printf-Style Debugging** (initially).
-- **GDB Support** (Later) for low-level debugging.
-
-## 12. Next Steps
-### Phase 1: Bootloader & Kernel Setup
-- Write the bootloader to enter long mode.
-- Set up basic VGA output for debugging.
-- Load and start the kernel in memory.
-
-### Phase 2: Core Kernel Features
-- Implement paging-based memory management.
-- Develop basic process management.
-- Add system calls and user mode execution.
-
-### Phase 3: Advanced Features
-- Implement preemptive SJF scheduling.
-- Develop FAT file system with read/write support.
-- Add multithreading & synchronization (mutexes, shared memory).
-
-### Phase 4: Testing & Expansion
-- Improve I/O handling (keyboard, disk drivers).
-- Implement basic GUI (later stage).
-- Transition from printf debugging to GDB for deeper debugging.
-
-## Source Code Layout (in progress)
-```
-/os_project
-│-- bootloader/       # Bootloader source code
-│── /kernel           # Core kernel source code
-│   │── kernel.cpp    # Main kernel entry point
-│   │── shell.cpp     # Kernel-integrated shell (this file)
-│   │── syscalls.cpp  # System call implementations
-│   │── scheduler.cpp # Process scheduling logic
-│   │── memory.cpp    # Memory management (paging, allocation)
-│   │── fs.cpp        # File system operations
-│-- memory/           # Memory management module
-│-- scheduler/        # Process scheduling module
-│-- fs/               # File system module (FAT implementation)
-│-- drivers/          # Hardware drivers (keyboard, disk, etc.)
-│   │── keyboard.cpp  # Keyboard driver (used for shell input)
-│   │── video.cpp     # Screen/terminal output
-│-- user/             # User-space programs
-│-- include/          # Header files
-│-- tests/            # Test scripts and debugging tools
-│─ /libc              # Standard C functions (string, memory, etc.)
-│─ /build             # Compiled binaries
-│─ /docs              # Documentation
-│─ Makefile           # Build system script
-```
+## License
+[MIT License](LICENSE)
