@@ -1,3 +1,9 @@
+// Compares two blocks of memory byte by byte.
+// Returns:
+//   -1 if first differing byte in 'a' is less than in 'b'
+//    0 if blocks are equal
+//    1 if first differing byte in 'a' is greater than in 'b'
+
 #include <string.h>
 
 int memcmp(const void* aptr, const void* bptr, size_t size) {
