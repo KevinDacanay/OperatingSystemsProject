@@ -1,3 +1,6 @@
+// Copies 'size' bytes from 'src' to 'dst'.
+// Undefined behavior if regions overlap. For overlapping memory, use memmove.
+
 #include <string.h>
 
 void* memcpy(void* restrict dstptr, const void* restrict srcptr, size_t size) {
